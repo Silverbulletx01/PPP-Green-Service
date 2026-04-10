@@ -29,6 +29,11 @@ const DB_USER = process.env.DB_USER || process.env.MYSQLUSER || 'root';
 const DB_PASSWORD = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '';
 const DB_NAME = process.env.DB_NAME || process.env.MYSQLDATABASE || 'ppp_green_service';
 
+if (process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL) {
+  // Respect reverse proxy headers on managed platforms for correct rate limiting and client IP detection.
+  app.set('trust proxy', 1);
+}
+
 let dbPool = null;
 const sseClients = new Set();
 
