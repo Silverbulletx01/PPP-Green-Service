@@ -21,6 +21,7 @@ const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
 const JWT_SECRET = (process.env.JWT_SECRET || '').trim();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const DEVICE_API_KEY = (process.env.DEVICE_API_KEY || '').trim();
+const DEVICE_AUTH_REQUIRED = String(process.env.DEVICE_AUTH_REQUIRED || 'true').toLowerCase() !== 'false';
 const AUTH_COOKIE_NAME = 'ppp_auth';
 
 const DB_HOST = process.env.DB_HOST || process.env.MYSQLHOST || '127.0.0.1';
@@ -46,7 +47,7 @@ function validateRequiredSecurityConfig() {
     throw new Error('ADMIN_PASSWORD is missing or insecure. Set a strong admin password in .env.');
   }
 
-  if (!DEVICE_API_KEY || DEVICE_API_KEY.length < 16) {
+  if (DEVICE_AUTH_REQUIRED && (!DEVICE_API_KEY || DEVICE_API_KEY.length < 16)) {
     throw new Error('DEVICE_API_KEY is missing or too short. Set a strong device API key (min 16 chars) in .env.');
   }
 }
@@ -964,6 +965,10 @@ app.get('/health', (req, res) => {
 });
 
 function authenticateDevice(req, res, next) {
+  if (!DEVICE_AUTH_REQUIRED) {
+    return next();
+  }
+
   const deviceKey = (req.headers['x-device-key'] || '').toString().trim();
   if (!deviceKey || deviceKey !== DEVICE_API_KEY) {
     return res.status(401).json({ success: false, message: 'Invalid device key.' });
