@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPP Green Complex Service - Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/png" href="/images/iconweb.png" />
+  <link rel="stylesheet" href="/css/style.css?v=1.0.2" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+</head>
+
+<body class="dashboard-page">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <img src="/images/Logo-pppgv.png" alt="PPP" class="logo-img" width="34" height="34" />
+        <div class="logo-text">
+          <span class="sidebar-brand">PPP Green</span>
+          <span class="sidebar-brand-sub" data-i18n="sidebar_subtitle">PPP Green Complex Service</span>
+        </div>
+      </div>
+      <button class="sidebar-collapse-btn" onclick="collapseSidebar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+      <button class="sidebar-close" onclick="toggleSidebar()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="overview" onclick="switchPage('overview', this); return false;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+        </svg>
+        <span data-i18n="nav_overview">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="records" onclick="switchPage('records', this); return false;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+        <span data-i18n="nav_records">Records</span>
+      </a>
+      <a href="#" class="nav-item" data-page="realtime" onclick="switchPage('realtime', this); return false;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+        <span data-i18n="nav_realtime">Real-time</span>
+      </a>
+      <a href="#" class="nav-item" data-page="gallery" onclick="switchPage('gallery', this); return false;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        <span data-i18n="nav_gallery">Gallery</span>
+      </a>
+      <a href="#" class="nav-item admin-only" data-page="users" onclick="switchPage('users', this); return false;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        <span data-i18n="nav_users">Users</span>
+      </a>
+      <a href="#" class="nav-item" data-page="settings" onclick="switchPage('settings', this); return false;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+        <span data-i18n="nav_settings">Settings</span>
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="sidebar-logout" onclick="handleLogout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+        <span data-i18n="logout">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Top navbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" onclick="toggleSidebar()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-meta">
+          <span class="last-updated" id="lastUpdated">
+            <span data-i18n="last_updated">Last updated</span> <span id="lastUpdatedTime">--:--</span>
+          </span>
+          <button class="refresh-btn" onclick="refreshData()" title="Refresh">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          </button>
+          <div class="connection-badge" id="connectionBadge">
+            <span class="badge-dot"></span>
+            <span data-i18n="connecting">Live</span>
+          </div>
+        </div>
+        <span class="topbar-divider"></span>
+        <div class="topbar-actions">
+          <button class="topbar-icon-btn notification-bell" id="notificationBell" onclick="openNotificationsCenter()" title="Notifications">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span class="topbar-icon-badge" id="notificationBellBadge" style="display:none">0</span>
+          </button>
+          <div class="topbar-user" onclick="openProfileModal()">
+            <div class="topbar-user-avatar" id="topbarAvatar">K<img id="topbarAvatarImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0" /></div>
+            <span class="topbar-user-name" id="topbarUserName">Kritsakorn</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page: Overview -->
+    <section id="page-overview" class="page active">
+      <div class="page-inner-header">
+        <div>
+          <h2 data-i18n="nav_overview">Dashboard</h2>
+          <span class="page-subtitle" id="pageSubtitle"></span>
+        </div>
+      </div>
+      <div class="stats-grid animate-fade-in">
+        <div class="stat-card" style="cursor:pointer" onclick="switchPage('records', document.querySelector('[data-page=records]'))">
+          <div class="stat-icon icon-blue">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value counter" id="statTotal">0</span>
+            <span class="stat-label" data-i18n="stat_total">Total Records</span>
+            <span class="stat-sub" id="statTotalSub"></span>
+          </div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="switchPage('records', document.querySelector('[data-page=records]'))">
+          <div class="stat-icon icon-orange">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value counter" id="statToday">0</span>
+            <span class="stat-label" data-i18n="stat_today">Today</span>
+          </div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="switchPage('gallery', document.querySelector('[data-page=gallery]'))">
+          <div class="stat-icon icon-teal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value counter" id="statPhotos">0</span>
+            <span class="stat-label" data-i18n="stat_photos">With Photos</span>
+          </div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="switchPage('realtime', document.querySelector('[data-page=realtime]'))">
+          <div class="stat-icon icon-green">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value counter" id="statConnections">0</span>
+            <span class="stat-label" data-i18n="stat_connections">Active Connections</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card animate-slide-up">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="chart_hourly">Hourly Message Volume</h3>
+              <span class="page-subtitle" data-i18n="chart_today_label">Today</span>
+            </div>
+            <div class="chart-header-right">
+              <span class="chart-count" id="chartHourlyTotal">0</span>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="hourlyChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card animate-slide-up" style="animation-delay: 0.1s">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="chart_daily">Daily Records (7 days)</h3>
+              <span class="page-subtitle" data-i18n="chart_all_label">All</span>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="dailyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity & Quick Info -->
+      <div class="dashboard-bottom-grid">
+        <div class="chart-card recent-activity-card animate-slide-up" style="animation-delay:0.2s">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="recent_activity">Recent Activity</h3>
+              <span class="page-subtitle" data-i18n="last_5_records">Last 5 records</span>
+            </div>
+            <a href="#" class="chart-link" onclick="switchPage('records', document.querySelector('[data-page=records]')); return false;">
+              <span data-i18n="view_all">View All</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6" /></svg>
+            </a>
+          </div>
+          <div class="recent-activity-list" id="recentActivityList">
+            <div class="empty-state" style="padding:24px 0">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <p data-i18n="no_records" style="font-size:13px">No records found</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Page: Records -->
+    <section id="page-records" class="page">
+      <div class="page-inner-header">
+        <div>
+          <h2 data-i18n="nav_records">Records</h2>
+          <span class="page-subtitle"></span>
+        </div>
+      </div>
+      <div class="records-toolbar">
+        <div class="records-count">
+          <span data-i18n="showing">Showing</span> <strong id="recordCount">0</strong> <span
+            data-i18n="records">records</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input type="text" id="searchInput" placeholder="Search..." data-i18n-placeholder="search_placeholder"
+              onkeyup="handleSearch(this.value)" />
+          </div>
+          <button class="btn btn-outline" onclick="refreshData()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+            <span data-i18n="refresh">Refresh</span>
+          </button>
+        </div>
+      </div>
+      <div class="records-list" id="recordsList">
+        <div class="empty-state" id="recordsEmpty">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+            opacity="0.3">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <p data-i18n="no_records">No records found</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page: Real-time -->
+    <section id="page-realtime" class="page">
+      <div class="page-inner-header">
+        <div>
+          <h2 data-i18n="nav_realtime">Real-time</h2>
+          <span class="page-subtitle"></span>
+        </div>
+      </div>
+      <div class="realtime-header">
+        <div class="live-indicator">
+          <span class="live-dot pulse"></span>
+          <span data-i18n="live_feed">Live Feed</span>
+        </div>
+        <span class="realtime-count" data-i18n="waiting">Waiting for new data...</span>
+      </div>
+      <div class="realtime-feed" id="realtimeFeed">
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+            opacity="0.3">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          <p data-i18n="realtime_empty">New data will appear here in real-time</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page: Gallery -->
+    <section id="page-gallery" class="page">
+      <div class="page-inner-header">
+        <div>
+          <h2 data-i18n="nav_gallery">Gallery</h2>
+          <span class="page-subtitle"></span>
+        </div>
+      </div>
+      <div class="gallery-grid" id="galleryGrid">
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+            opacity="0.3">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          <p data-i18n="no_photos">No photos available</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page: Users (Admin only) -->
+    <section id="page-users" class="page">
+      <div class="page-inner-header">
+        <div>
+          <h2 data-i18n="nav_users">Users</h2>
+          <span class="page-subtitle"></span>
+        </div>
+        <div class="users-header-actions">
+          <div class="users-filters">
+            <div class="search-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input type="text" id="userSearchInput" data-i18n-placeholder="search_users" placeholder="Search users..." oninput="handleUserSearch()" />
+            </div>
+          </div>
+          <button class="btn-primary" onclick="openAddUserModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span data-i18n="add_user">Add User</span>
+          </button>
+        </div>
+      </div>
+      <div class="users-table-wrapper">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; cursor: pointer" onclick="sortUsers('index')">
+                <div class="th-content"># <span id="sort-idx" class="sort-icon"></span></div>
+              </th>
+              <th style="width: 60px" data-i18n="user_photo">Photo</th>
+              <th style="cursor: pointer" onclick="sortUsers('name')">
+                <div class="th-content" data-i18n="user_full_name">Full Name <span id="sort-name" class="sort-icon"></span></div>
+              </th>
+              <th style="cursor: pointer" onclick="sortUsers('email')">
+                <div class="th-content" data-i18n="user_email">Email <span id="sort-email" class="sort-icon"></span></div>
+              </th>
+              <th style="cursor: pointer" onclick="sortUsers('role')">
+                <div class="th-content" data-i18n="user_role">Role <span id="sort-role" class="sort-icon"></span></div>
+              </th>
+              <th data-i18n="user_status">Status</th>
+              <th data-i18n="user_actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr>
+              <td colspan="6" class="empty-cell" data-i18n="loading">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Page: Settings -->
+    <section id="page-settings" class="page">
+      <div class="page-inner-header">
+        <div>
+          <h2 data-i18n="nav_settings">Settings</h2>
+          <span class="page-subtitle" id="pageSubtitleSettings"></span>
+        </div>
+      </div>
+
+      <!-- Profile Banner -->
+      <div class="settings-profile-banner animate-slide-up">
+        <div class="settings-profile-bg"></div>
+        <div class="settings-profile-content">
+          <div class="settings-profile-avatar" id="settingsAvatar">
+            <span id="settingsAvatarInitial">K</span>
+            <img id="settingsAvatarImg" src="" alt="" style="display:none" />
+          </div>
+          <div class="settings-profile-info">
+            <h3 id="settingsProfileName">User</h3>
+            <p id="settingsProfileEmail">user@example.com</p>
+            <span class="settings-profile-role" id="settingsProfileRole">User</span>
+          </div>
+          <div class="settings-profile-actions">
+            <button class="settings-profile-edit-btn" onclick="openEditOwnProfile()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span data-i18n="edit_profile">Edit Profile</span>
+            </button>
+            <button class="settings-profile-edit-btn" onclick="openChangePasswordModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              <span data-i18n="change_password">Change Password</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-layout">
+        <!-- Left Column -->
+        <div class="settings-col">
+          <div class="settings-group-head">
+            <span class="settings-group-kicker" data-i18n="settings_group_preferences">PREFERENCES</span>
+            <h3 class="settings-group-title" data-i18n="settings_group_display_account">Display & Account</h3>
+          </div>
+
+          <!-- Appearance Card -->
+          <div class="settings-card animate-slide-up" style="animation-delay:0.04s">
+            <div class="settings-card-header">
+              <div class="settings-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="5" />
+                  <line x1="12" y1="1" x2="12" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" />
+                  <line x1="21" y1="12" x2="23" y2="12" />
+                </svg>
+              </div>
+              <div>
+                <h3 data-i18n="setting_appearance">Appearance</h3>
+                <p class="settings-card-desc">Customize the look and feel</p>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="setting-row" onclick="toggleTheme()">
+                <div class="setting-row-left">
+                  <div class="setting-icon setting-icon-amber">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="5" />
+                      <line x1="12" y1="1" x2="12" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="23" />
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                      <line x1="1" y1="12" x2="3" y2="12" />
+                      <line x1="21" y1="12" x2="23" y2="12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="setting-label" data-i18n="setting_theme">Theme</span>
+                    <span class="setting-desc" id="settingThemeValue">Light</span>
+                  </div>
+                </div>
+                <div class="setting-toggle" id="themeToggleSwitch">
+                  <div class="setting-toggle-dot"></div>
+                </div>
+              </div>
+              <div class="setting-row" onclick="toggleLanguageSetting()">
+                <div class="setting-row-left">
+                  <div class="setting-icon setting-icon-blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="2" y1="12" x2="22" y2="12" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="setting-label" data-i18n="setting_language">Language</span>
+                    <span class="setting-desc" id="settingLangValue">ไทย</span>
+                  </div>
+                </div>
+                <div class="setting-toggle" id="languageToggleSwitch">
+                  <div class="setting-toggle-dot"></div>
+                </div>
+              </div>
+              <div class="setting-row" onclick="toggleNotifications()">
+                <div class="setting-row-left">
+                  <div class="setting-icon setting-icon-rose">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="setting-label" data-i18n="setting_notifications">Notifications</span>
+                    <span class="setting-desc" id="settingNotificationValue" data-i18n="notifications_on">On + Sound</span>
+                  </div>
+                </div>
+                <div class="setting-toggle" id="notificationsToggleSwitch">
+                  <div class="setting-toggle-dot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="settings-col">
+          <div class="settings-group-head">
+            <span class="settings-group-kicker" data-i18n="settings_group_system">SYSTEM</span>
+            <h3 class="settings-group-title" data-i18n="settings_group_service_info">Service Information</h3>
+          </div>
+
+          <!-- System Info Card -->
+          <div class="settings-card animate-slide-up" style="animation-delay:0.06s">
+            <div class="settings-card-header">
+              <div class="settings-card-icon settings-card-icon-teal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              </div>
+              <div>
+                <h3 data-i18n="setting_about">About</h3>
+                <p class="settings-card-desc">System information</p>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="setting-row">
+                <div class="setting-row-left">
+                  <div class="setting-icon setting-icon-teal">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                      <line x1="6" y1="6" x2="6.01" y2="6" />
+                      <line x1="6" y1="18" x2="6.01" y2="18" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="setting-label" data-i18n="info_service">Service</span>
+                    <span class="setting-desc">PPP Green Complex version DEMO</span>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-left">
+                  <div class="setting-icon setting-icon-green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="setting-label" data-i18n="info_status">Status</span>
+                    <span class="setting-desc status-online" id="infoStatus" data-i18n="status_online">Online</span>
+                  </div>
+                </div>
+                <span class="connection-badge"><span class="badge-dot"></span> <span data-i18n="connected">Live</span></span>
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-left">
+                  <div class="setting-icon setting-icon-indigo">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="setting-label" data-i18n="info_storage">Storage</span>
+                    <span class="setting-desc" id="infoStorage">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Version Card -->
+        <div class="settings-version-banner animate-slide-up" style="animation-delay:0.10s">
+          <div class="settings-version-icon">
+            <img src="/images/Logo-pppgv.png" alt="PPP Green Complex Logo" class="settings-version-logo" />
+          </div>
+          <div class="settings-version-text">
+            <strong>PPP Green Complex</strong>
+            <span>Version Demo</span>
+          </div>
+          <p class="settings-version-note">PPP Green Complex Public Company Limited</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="modal-overlay" onclick="closeModal(event, 'profileModal')">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h3 data-i18n="profile_title">My Profile</h3>
+        <button class="modal-close" onclick="closeProfileModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-card-top">
+          <div class="profile-photo-lg profile-photo-clickable" id="profilePhotoWrap" onclick="viewProfilePhoto()">
+            <span class="profile-avatar-lg" id="profileAvatar">K</span>
+            <img id="profilePhoto" src="" alt="" class="profile-photo-img" style="display:none" />
+            <div class="profile-photo-zoom">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                <line x1="11" y1="8" x2="11" y2="14" />
+                <line x1="8" y1="11" x2="14" y2="11" />
+              </svg>
+            </div>
+          </div>
+          <div class="profile-name" id="profileName">Administrator</div>
+          <span class="profile-role-badge" id="profileRole">Admin</span>
+        </div>
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span class="profile-info-label" data-i18n="Full name">Name</span>
+            <span class="profile-info-value" id="profileFullName">-</span>
+          </div>
+          <div class="profile-info-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            <span class="profile-info-label" data-i18n="email">Email</span>
+            <span class="profile-info-value" id="profileEmail">-</span>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn-profile-edit" onclick="openEditOwnProfile()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+            </svg>
+            <span data-i18n="edit_profile">Edit Profile</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Own Profile Modal -->
+  <div id="editProfileModal" class="modal-overlay" style="z-index:1050" onclick="closeModal(event, 'editProfileModal')">
+    <div class="modal user-modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3 data-i18n="edit_profile">Edit Profile</h3>
+        <button class="modal-close" onclick="closeEditProfileModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editProfileForm" onsubmit="handleEditProfileSubmit(event)">
+          <div class="user-photo-upload">
+            <div class="user-photo-preview" id="editProfilePhotoPreview"
+              onclick="document.getElementById('editProfilePhotoInput').click()">
+              <span class="user-photo-initial" id="editProfilePhotoInitial">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </span>
+              <img id="editProfilePhotoImg" src="" alt=""
+                style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%" />
+              <div class="user-photo-overlay">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </div>
+            </div>
+            <input type="file" id="editProfilePhotoInput" accept="image/*" style="display:none"
+              onchange="handleEditProfilePhotoSelect(event)" />
+            <span class="user-photo-hint" data-i18n="upload_photo">Click to upload photo</span>
+          </div>
+          <div class="user-form-fields">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="editProfileFirstName">First Name</label>
+                <input type="text" id="editProfileFirstName" required class="form-input" placeholder="First name" />
+              </div>
+              <div class="form-group">
+                <label for="editProfileLastName">Last Name</label>
+                <input type="text" id="editProfileLastName" class="form-input" placeholder="Last name" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="editProfileEmailDisplay" data-i18n="email">Email</label>
+              <input type="email" id="editProfileEmailDisplay" class="form-input" disabled style="opacity:0.6;cursor:not-allowed" />
+            </div>
+          </div>
+          <div class="form-actions user-form-actions">
+            <button type="button" class="btn-cancel" onclick="closeEditProfileModal()" data-i18n="cancel">Cancel</button>
+            <button type="submit" class="btn-primary" id="editProfileSubmitBtn" data-i18n="save">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img id="lightboxImg" src="" alt="Preview" />
+  </div>
+
+  <!-- Add/Edit User Modal -->
+  <div id="userModal" class="modal-overlay" onclick="closeModal(event, 'userModal')">
+    <div class="modal user-modal" style="max-width:440px">
+      <div class="modal-header">
+        <h3 id="userModalTitle" data-i18n="add_user">Add User</h3>
+        <button class="modal-close" onclick="closeUserModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="userForm" onsubmit="handleUserFormSubmit(event)">
+          <input type="hidden" id="userFormId" />
+          <!-- Profile Photo -->
+          <div class="user-photo-upload">
+            <div class="user-photo-preview" id="userPhotoPreview"
+              onclick="document.getElementById('userPhotoInput').click()">
+              <span class="user-photo-initial" id="userPhotoInitial">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </span>
+              <img id="userPhotoImg" src="" alt=""
+                style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%" />
+              <div class="user-photo-overlay">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </div>
+            </div>
+            <input type="file" id="userPhotoInput" accept="image/*" style="display:none"
+              onchange="handleUserPhotoSelect(event)" />
+            <span class="user-photo-hint" data-i18n="upload_photo">Click to upload photo</span>
+          </div>
+          <!-- Form Fields -->
+          <div class="user-form-section">
+          
+            <div class="user-form-fields">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="userFormFirstName">First Name</label>
+                  <input type="text" id="userFormFirstName" required class="form-input" placeholder="First name" />
+                </div>
+                <div class="form-group">
+                  <label for="userFormLastName">Last Name</label>
+                  <input type="text" id="userFormLastName" class="form-input" placeholder="Last name" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="userFormEmail" data-i18n="user_email">Email</label>
+                <input type="email" id="userFormEmail" required class="form-input" placeholder="example@email.com" />
+              </div>
+            </div>
+          </div>
+          <div class="user-form-section">
+            <div class="user-form-fields">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="userFormRole" data-i18n="user_role">Role</label>
+                  <select id="userFormRole" class="form-input">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div class="form-group" id="userFormPasswordGroup">
+                  <label for="userFormPassword" data-i18n="password">Password</label>
+                  <input type="password" id="userFormPassword" class="form-input" minlength="6"
+                    autocomplete="new-password" placeholder="Min 6 characters" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions user-form-actions">
+            <button type="button" class="btn-cancel" onclick="closeUserModal()" data-i18n="cancel">Cancel</button>
+            <button type="submit" class="btn-primary" id="userFormSubmitBtn" data-i18n="save">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Crop Modal -->
+  <div id="cropModal" class="modal-overlay" style="z-index:1100" onclick="closeCropModal()">
+    <div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 data-i18n="crop_photo">Crop Photo</h3>
+        <button class="modal-close" onclick="closeCropModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="crop-container">
+          <img id="cropImage" src="" alt="Crop" />
+        </div>
+        <div class="form-actions" style="margin-top:16px">
+          <button type="button" class="btn-cancel" onclick="closeCropModal()" data-i18n="cancel">Cancel</button>
+          <button type="button" class="btn-primary" onclick="applyCrop()" data-i18n="crop_apply">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div id="resetPwModal" class="modal-overlay" onclick="closeModal(event, 'resetPwModal')">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-header">
+        <h3 data-i18n="reset_password">Reset Password</h3>
+        <button class="modal-close" onclick="closeResetPwModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="resetPwForm" onsubmit="handleResetPassword(event)">
+          <input type="hidden" id="resetPwUserId" />
+          <p class="reset-pw-user" id="resetPwUserLabel"></p>
+          <div class="form-group">
+            <label for="resetPwNew" data-i18n="new_password">New Password</label>
+            <input type="password" id="resetPwNew" class="form-input" minlength="6" required
+              autocomplete="new-password" />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="closeResetPwModal()" data-i18n="cancel">Cancel</button>
+            <button type="submit" class="btn-primary" data-i18n="reset_password">Reset Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModal" class="modal-overlay" onclick="closeModal(event, 'logoutModal')">
+    <div class="modal" style="max-width: 380px">
+      <div class="modal-body">
+        <div class="confirm-dialog">
+          <div class="confirm-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </div>
+          <h3 data-i18n="logout_confirm_title">Logout</h3>
+          <p data-i18n="logout_confirm_msg">Are you sure you want to logout? You will need to sign in again.</p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" onclick="closeLogoutModal()" data-i18n="cancel">Cancel</button>
+            <button class="btn-confirm-danger" onclick="confirmLogout()" data-i18n="logout_confirm_btn">Yes, Logout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Delete Confirmation Modal -->
+  <div id="userDeleteModal" class="modal-overlay" onclick="closeModal(event, 'userDeleteModal')">
+    <div class="modal" style="max-width: 380px">
+      <div class="modal-body">
+        <div class="confirm-dialog">
+          <div class="confirm-icon" style="background: rgba(239,68,68,0.12)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </div>
+          <h3 data-i18n="delete_user_title">Delete User</h3>
+          <p data-i18n="delete_user_confirm">Are you sure you want to delete this employee? This action cannot be undone.</p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" onclick="closeUserDeleteModal()" data-i18n="cancel">Cancel</button>
+            <button class="btn-confirm-danger" onclick="confirmDeleteUserData()" data-i18n="delete_btn">Yes, Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Detail Modal -->
+  <div id="recordDetailModal" class="modal-overlay" onclick="closeModal(event, 'recordDetailModal')">
+    <div class="modal" style="max-width: 480px">
+      <div class="modal-header">
+        <h3 data-i18n="record_detail">Record Detail</h3>
+        <button class="modal-close" onclick="closeRecordDetail()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="recordDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="changePwModal" class="modal-overlay" onclick="closeModal(event, 'changePwModal')">
+    <div class="modal user-modal" style="max-width: 400px">
+      <div class="modal-header">
+        <h3 data-i18n="change_password">Change Password</h3>
+        <button class="modal-close" onclick="closeChangePwModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form onsubmit="handleChangePassword(event)">
+        <div class="modal-body">
+          <div class="user-form-fields">
+            <div class="form-group">
+              <label>Current Password</label>
+              <input type="password" id="changePwCurrent" class="form-input" required minlength="6" placeholder="Enter current password" />
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" id="changePwNew" class="form-input" required minlength="6" placeholder="Enter new password" />
+            </div>
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <input type="password" id="changePwConfirm" class="form-input" required minlength="6" placeholder="Confirm new password" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer user-form-actions">
+          <button type="button" class="btn-cancel" onclick="closeChangePwModal()" data-i18n="cancel">Cancel</button>
+          <button type="submit" class="btn-primary" data-i18n="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Center Modal -->
+  <div id="notificationModal" class="modal-overlay" onclick="closeModal(event, 'notificationModal')">
+    <div class="modal notification-modal" style="max-width: 520px">
+      <div class="modal-header">
+        <h3 data-i18n="notification_center">Notifications</h3>
+        <button class="modal-close" onclick="closeNotificationsModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body notification-modal-body">
+        <div id="notificationList" class="notification-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeNotificationsModal()" data-i18n="close">Close</button>
+        <button type="button" class="btn-primary" onclick="goToRealtimeFromNotifications()" data-i18n="view_realtime">Open Real-time</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Record Confirmation Modal -->
+  <div id="deleteModal" class="modal-overlay" onclick="closeModal(event, 'deleteModal')">
+    <div class="modal" style="max-width: 380px">
+      <div class="modal-body">
+        <div class="confirm-dialog">
+          <div class="confirm-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </div>
+          <h3 data-i18n="delete_title">Delete Record</h3>
+          <p data-i18n="delete_confirm">Are you sure you want to delete this record?</p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
+            <button class="btn-confirm-danger" onclick="confirmDelete()" data-i18n="delete_btn">Yes, Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/js/i18n.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Firebase credentials
+firebase-key.json
+*serviceAccountKey*.json
+*firebase-adminsdk*.json
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Debug output
+netstat_out.txt
+check.txt
+auth_cookie.txt
+test_log.txt

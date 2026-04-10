@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPP Green Complex Service - Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/png" href="/images/iconweb.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body class="login-page">
+  <!-- Animated background particles -->
+  <canvas id="particles" class="particles-canvas"></canvas>
+
+  <div class="login-wrapper">
+    <div class="login-card animate-slide-up">
+      <!-- Logo -->
+      <div class="login-logo">
+        <div>
+          <img src="/images/Logo-pppgv.png" alt="PPP Green Complex" width="120" />
+        </div>
+        <h1 class="login-title">PPP Green Complex</h1>
+        <p class="login-subtitle" data-i18n="login_subtitle">PPP Green Complex Service</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="username" data-i18n="username">Email</label>
+          <div class="input-wrapper">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            <input type="email" id="username" name="username" required autocomplete="email" placeholder=""
+              data-i18n-placeholder="username_placeholder" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="password" data-i18n="password">Password</label>
+          <div class="input-wrapper">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <input type="password" id="password" data-i18n-placeholder="password_placeholder" placeholder="" required autocomplete="current-password">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+              <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-options">
+          <label class="remember-label">
+            <input type="checkbox" id="rememberMe" />
+            <span class="remember-check"></span>
+            <span data-i18n="remember_me">Remember me</span>
+          </label>
+        </div>
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span data-i18n="sign_in">Sign In</span>
+        </button>
+      </form>
+      <a href="#" class="forgot-password" onclick="showForgotPassword(event); return false;" data-i18n="forgot_password">Forgot
+        password?</a>
+
+      <div id="forgotPasswordForm" class="forgot-form" style="display:none">
+        <p class="forgot-desc" data-i18n="forgot_desc">Contact admin to reset your password</p>
+        <p class="forgot-admin-contact">Admin: <strong>admin@pppgreen.com</strong></p>
+        <button type="button" class="btn-back" onclick="hideForgotPassword()" data-i18n="back_to_login">Back to
+          Login</button>
+      </div>
+
+      <div class="login-footer">
+        <p data-i18n="login_footer">PPP Green Complex Public Company Limited</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/js/i18n.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/particles.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+
+</html>
