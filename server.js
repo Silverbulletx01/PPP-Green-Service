@@ -23,11 +23,11 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const DEVICE_API_KEY = (process.env.DEVICE_API_KEY || '').trim();
 const AUTH_COOKIE_NAME = 'ppp_auth';
 
-const DB_HOST = process.env.DB_HOST || '127.0.0.1';
-const DB_PORT = Number(process.env.DB_PORT || 3306);
-const DB_USER = process.env.DB_USER || 'root';
-const DB_PASSWORD = process.env.DB_PASSWORD || '';
-const DB_NAME = process.env.DB_NAME || 'ppp_green_service';
+const DB_HOST = process.env.DB_HOST || process.env.MYSQLHOST || '127.0.0.1';
+const DB_PORT = Number(process.env.DB_PORT || process.env.MYSQLPORT || 3306);
+const DB_USER = process.env.DB_USER || process.env.MYSQLUSER || 'root';
+const DB_PASSWORD = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '';
+const DB_NAME = process.env.DB_NAME || process.env.MYSQLDATABASE || 'ppp_green_service';
 
 let dbPool = null;
 const sseClients = new Set();
