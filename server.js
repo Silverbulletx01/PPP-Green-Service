@@ -350,6 +350,67 @@ if (!fs.existsSync(uploadsDir)) {
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const IMAGE_MIME_TO_EXTENSION = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp'
+};
+
+function parseBase64Image(imageValue) {
+  if (typeof imageValue !== 'string') {
+    throw new Error('Base64 image payload must be a string.');
+  }
+
+  const trimmed = imageValue.trim();
+  if (!trimmed) {
+    throw new Error('Base64 image payload is empty.');
+  }
+
+  const dataUrlMatch = trimmed.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\r\n]+)$/);
+  let mimeType = 'image/jpeg';
+  let base64Data = trimmed;
+
+  if (dataUrlMatch) {
+    mimeType = dataUrlMatch[1].toLowerCase();
+    base64Data = dataUrlMatch[2];
+  }
+
+  if (mimeType === 'image/jpg') {
+    mimeType = 'image/jpeg';
+  }
+
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) {
+    throw new Error('Unsupported image type. Only JPG, PNG, WEBP are allowed.');
+  }
+
+  const normalizedBase64 = base64Data.replace(/\s+/g, '');
+  const buffer = Buffer.from(normalizedBase64, 'base64');
+
+  if (!buffer.length) {
+    throw new Error('Invalid base64 image data.');
+  }
+
+  if (buffer.length > MAX_IMAGE_SIZE_BYTES) {
+    throw new Error('Image size must be less than or equal to 5MB.');
+  }
+
+  const extension = IMAGE_MIME_TO_EXTENSION[mimeType] || '.jpg';
+  return {
+    buffer,
+    mimeType,
+    fileName: `base64-upload-${Date.now()}${extension}`
+  };
+}
+
+function removeInlineImagePayloadFields(payload) {
+  if (!payload || typeof payload !== 'object') return;
+  delete payload.photoBase64;
+  delete payload.imageBase64;
+  delete payload.photoDataUrl;
+  delete payload.imageDataUrl;
+}
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, callback) => {
@@ -367,7 +428,7 @@ const upload = multer({
       callback(null, `${Date.now()}-${safeBaseName}${extension.toLowerCase()}`);
     }
   }),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: MAX_IMAGE_SIZE_BYTES },
   fileFilter: (_req, file, callback) => {
     if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
       callback(new Error('Unsupported file type. Only JPG, PNG, WEBP are allowed.'));
@@ -956,7 +1017,22 @@ app.post('/api/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, re
     }
   }
 
-  if (!payload || Object.keys(payload).length === 0) {
+  const inlineImageValue = payload.photoBase64 || payload.imageBase64 || payload.photoDataUrl || payload.imageDataUrl;
+  if (!req.file && typeof inlineImageValue === 'string' && inlineImageValue.trim()) {
+    try {
+      const parsedImage = parseBase64Image(inlineImageValue);
+      plateImageBuffer = parsedImage.buffer;
+      plateImageMime = parsedImage.mimeType;
+      plateImageName = parsedImage.fileName;
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message || 'Invalid base64 image payload.' });
+    }
+  }
+
+  // Do not keep large inline image strings inside JSON payload.
+  removeInlineImagePayloadFields(payload);
+
+  if ((!payload || Object.keys(payload).length === 0) && !plateImageBuffer) {
     return res.status(400).json({ success: false, message: 'Request must include data fields or an image file.' });
   }
 
