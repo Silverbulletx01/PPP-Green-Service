@@ -1126,18 +1126,52 @@ function startServer(initialPort) {
   listen();
 }
 
-try {
-  validateRequiredSecurityConfig();
-} catch (error) {
-  console.error('Security configuration error:', error.message);
-  process.exit(1);
+// ==================== STARTUP ====================
+// When run directly (npm start / node server.js) boot as standalone HTTP server.
+// When imported as a module (Vercel serverless) export the Express app and
+// initialise the database lazily so the function handler is returned immediately.
+
+let dbInitPromise = null;
+
+function ensureDb() {
+  if (!dbInitPromise) {
+    dbInitPromise = initializeDatabase().catch((err) => {
+      console.error('DB init error:', err.message);
+      dbInitPromise = null; // allow retry on next request
+    });
+  }
+  return dbInitPromise;
 }
 
-initializeDatabase()
-  .then(() => {
-    startServer(PORT);
-  })
-  .catch((error) => {
-    console.error('Unable to start server because MySQL is not ready.', error.message);
+if (require.main === module) {
+  // ---- Standalone mode ----
+  try {
+    validateRequiredSecurityConfig();
+  } catch (error) {
+    console.error('Security configuration error:', error.message);
     process.exit(1);
-  });
+  }
+
+  initializeDatabase()
+    .then(() => {
+      startServer(PORT);
+    })
+    .catch((error) => {
+      console.error('Unable to start server because MySQL is not ready.', error.message);
+      process.exit(1);
+    });
+} else {
+  // ---- Serverless mode (Vercel) ----
+  // Validate config but do NOT call process.exit so the function can still
+  // return an informative error response instead of crashing silently.
+  try {
+    validateRequiredSecurityConfig();
+  } catch (error) {
+    console.error('Security configuration error:', error.message);
+  }
+
+  // Kick off DB init eagerly; requests will wait via ensureDb() if needed.
+  ensureDb();
+}
+
+module.exports = app;
