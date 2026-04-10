@@ -32,3 +32,7 @@ netstat_out.txt
 check.txt
 auth_cookie.txt
 test_log.txt
+
+# DB import/export dumps (may contain credentials)
+sql/railway_import.sql
+*.sql.bak
