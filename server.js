@@ -4,6 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const http = require('http');
 const https = require('https');
 const multer = require('multer');
@@ -349,10 +350,28 @@ async function ensureAdminUser() {
 }
 
 // File upload setup
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+function resolveUploadsDir() {
+  const candidateDirs = [
+    process.env.UPLOADS_DIR,
+    path.join(__dirname, 'public', 'uploads'),
+    path.join(os.tmpdir(), 'ppp-green-uploads')
+  ].filter(Boolean);
+
+  for (const candidate of candidateDirs) {
+    try {
+      const dir = path.resolve(candidate);
+      fs.mkdirSync(dir, { recursive: true });
+      return dir;
+    } catch (_error) {
+      // Try next candidate directory
+    }
+  }
+
+  return null;
 }
+
+const uploadsDir = resolveUploadsDir();
+const canWriteUploads = Boolean(uploadsDir);
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
@@ -417,8 +436,8 @@ function removeInlineImagePayloadFields(payload) {
   delete payload.imageDataUrl;
 }
 
-const upload = multer({
-  storage: multer.diskStorage({
+const uploadStorage = canWriteUploads
+  ? multer.diskStorage({
     destination: (_req, _file, callback) => {
       callback(null, uploadsDir);
     },
@@ -433,7 +452,11 @@ const upload = multer({
       const safeBaseName = baseName || 'photo';
       callback(null, `${Date.now()}-${safeBaseName}${extension.toLowerCase()}`);
     }
-  }),
+  })
+  : multer.memoryStorage();
+
+const upload = multer({
+  storage: uploadStorage,
   limits: { fileSize: MAX_IMAGE_SIZE_BYTES },
   fileFilter: (_req, file, callback) => {
     if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
@@ -1015,10 +1038,21 @@ app.post('/api/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, re
 
   if (req.file) {
     const requestProtocol = req.headers['x-forwarded-proto']?.split(',')[0]?.trim() || req.protocol;
-    payload.photoUrl = `${requestProtocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    if (canWriteUploads && req.file.filename) {
+      payload.photoUrl = `${requestProtocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    }
     payload.photoOriginalName = req.file.originalname;
     try {
-      plateImageBuffer = fs.readFileSync(req.file.path);
+      if (req.file.buffer) {
+        plateImageBuffer = req.file.buffer;
+      } else if (req.file.path) {
+        plateImageBuffer = fs.readFileSync(req.file.path);
+      }
+
+      if (!plateImageBuffer || plateImageBuffer.length === 0) {
+        return res.status(500).json({ success: false, message: 'Failed to process uploaded image.' });
+      }
+
       plateImageMime = req.file.mimetype || null;
       plateImageName = req.file.originalname || req.file.filename || null;
     } catch (error) {
