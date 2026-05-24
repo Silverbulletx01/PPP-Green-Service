@@ -1081,7 +1081,7 @@ app.delete('/api/v1/users/:id', authenticateToken, requireAdmin, async (req, res
 
 // ==================== SSE STREAM ====================
 
-app.get('/v1/android/data/stream', optionalAuth, (req, res) => {
+app.get('/api/v1/android/data/stream', optionalAuth, (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -1166,7 +1166,7 @@ function enforcePppWifiNetwork(req, res, next) {
 // ==================== DATA ROUTES ====================
 
 // POST - receive data from Android app (no auth required for device submission)
-app.post('/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, res, next) => {
+app.post('/api/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, res, next) => {
   const contentType = req.headers['content-type'] || '';
   if (!contentType.includes('multipart/form-data')) {
     next();
@@ -1263,7 +1263,7 @@ app.post('/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, res, n
 });
 
 // GET - fetch all data (protected)
-app.get('/v1/android/data', authenticateToken, async (req, res) => {
+app.get('/api/v1/android/data', authenticateToken, async (req, res) => {
   try {
     const data = await getDataRecords();
     return res.status(200).json({ success: true, count: data.length, data });
@@ -1274,7 +1274,7 @@ app.get('/v1/android/data', authenticateToken, async (req, res) => {
 });
 
 // GET - fetch stored plate image by record id (protected)
-app.get('/v1/android/data/:id/plate-image', authenticateToken, async (req, res) => {
+app.get('/api/v1/android/data/:id/plate-image', authenticateToken, async (req, res) => {
   try {
     const imageData = await getDataRecordImageById(req.params.id);
     if (!imageData) {
@@ -1294,7 +1294,7 @@ app.get('/v1/android/data/:id/plate-image', authenticateToken, async (req, res) 
 });
 
 // PUT - update record plate number (protected)
-app.put('/v1/android/data/:id/plate-number', authenticateToken, async (req, res) => {
+app.put('/api/v1/android/data/:id/plate-number', authenticateToken, async (req, res) => {
   const plateNumber = req.body?.plateNumber ?? req.body?.licensePlate ?? req.body?.license_plate ?? '';
 
   try {
@@ -1318,7 +1318,7 @@ app.put('/v1/android/data/:id/plate-number', authenticateToken, async (req, res)
 });
 
 // DELETE - delete a record (protected)
-app.delete('/v1/android/data/:id', authenticateToken, async (req, res) => {
+app.delete('/api/v1/android/data/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const deleted = await deleteDataRecord(id);
