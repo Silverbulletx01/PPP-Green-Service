@@ -1,6 +1,6 @@
 {
   "name": "ppp-palm-service",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "PPP Palm Service - Dashboard for monitoring palm oil plantation data from Android devices",
   "main": "server.js",
   "scripts": {

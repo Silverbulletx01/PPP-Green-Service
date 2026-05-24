@@ -191,6 +191,9 @@ Port fallback behavior:
 | `JWT_SECRET` | Yes | `your-32+-char-secret...` | JWT signing secret |
 | `JWT_EXPIRES_IN` | No | `24h` | JWT expiration |
 | `DEVICE_API_KEY` | Yes | `your-strong-device-api-key` | Required for Android ingest API |
+| `PPP_WIFI_ENFORCE` | No | `true` | Enable IP-based PPP WiFi restriction for Android ingest API |
+| `PPP_WIFI_ALLOWED_CIDRS` | No | `192.168.10.0/24,10.20.0.0/16` | Allowed PPP WiFi IPv4 networks/CIDRs |
+| `PPP_WIFI_ALLOW_LOCALHOST` | No | `true` | Allow `127.0.0.1` and `::1` for local testing |
 | `ADMIN_EMAIL` | Yes | `admin@pppgreen.com` | Default admin login email |
 | `ADMIN_PASSWORD` | Yes | `your-strong-admin-password` | Default admin login password |
 | `ADMIN_FIRST_NAME` | No | `Admin` | Default admin profile |

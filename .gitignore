@@ -36,3 +36,5 @@ test_log.txt
 # DB import/export dumps (may contain credentials)
 sql/railway_import.sql
 *.sql.bak
+
+.vercel

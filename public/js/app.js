@@ -284,6 +284,10 @@ let notificationUnreadCount = 0;
 let notificationAudioContext = null;
 let notificationItems = [];
 let languageToggleLocked = false;
+let selectedRealtimeIds = new Set();
+let selectedRecordIds = new Set();
+let editingPlateRecordId = null;
+let savingPlateRecordId = null;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -677,6 +681,7 @@ async function loadStats() {
     animateCounter('statToday', data.todayRecords);
     animateCounter('statPhotos', data.withPhotos);
     animateCounter('statConnections', data.activeConnections);
+    animateCounter('statReceived', data.totalDataReceived ?? data.totalRecords);
 
     const infoStorage = document.getElementById('infoStorage');
     if (infoStorage) infoStorage.textContent = data.storageType;
@@ -936,9 +941,13 @@ function renderRecords() {
     const status = p.status || '';
     const safeStatus = escapeHtml(getLocalizedStatus(status));
     const statusClass = getStatusClass(status);
+    const isSelected = selectedRecordIds.has(String(record.id));
 
     return `
-      <div class="record-card" style="animation-delay: ${Math.min(index * 0.05, 0.5)}s">
+      <div class="record-card${isSelected ? ' selected' : ''}" data-record-id="${safeId}" style="animation-delay: ${Math.min(index * 0.05, 0.5)}s">
+        <label class="record-card-select" onclick="event.stopPropagation()">
+          <input type="checkbox" data-record-id="${safeId}" ${isSelected ? 'checked' : ''} onchange="toggleRecordSelection(this.dataset.recordId, this.checked)" />
+        </label>
         <div class="record-card-main" onclick="openRecordDetail('${safeId}')">
           ${safePhotoUrl ? `<div class="record-thumb"><img src="${safePhotoUrl}" alt="" loading="lazy" /></div>` : `<div class="record-thumb record-thumb-empty"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`}
           <div class="record-card-body">
@@ -963,6 +972,90 @@ function renderRecords() {
         </div>
       </div>`;
   }).join('');
+
+  updateRecordSelectionUI();
+}
+
+function updateRecordSelectionUI() {
+  const container = document.getElementById('recordsList');
+  const deleteBtn = document.getElementById('btnDeleteRecordsSelected');
+  const selectAll = document.getElementById('recordsSelectAll');
+  if (!container) return;
+
+  const items = Array.from(container.querySelectorAll('.record-card[data-record-id]'));
+  const itemCount = items.length;
+  const selectedCount = items.filter(el => selectedRecordIds.has(String(el.dataset.recordId))).length;
+
+  if (deleteBtn) deleteBtn.disabled = selectedCount === 0;
+
+  if (selectAll) {
+    selectAll.checked = itemCount > 0 && selectedCount === itemCount;
+    selectAll.indeterminate = selectedCount > 0 && selectedCount < itemCount;
+  }
+}
+
+function toggleRecordSelection(id, checked) {
+  const safeId = String(id);
+  if (checked) {
+    selectedRecordIds.add(safeId);
+  } else {
+    selectedRecordIds.delete(safeId);
+  }
+  const card = document.querySelector(`.record-card[data-record-id="${CSS.escape(safeId)}"]`);
+  if (card) card.classList.toggle('selected', checked);
+  updateRecordSelectionUI();
+}
+
+function toggleRecordSelectAll(checked) {
+  const container = document.getElementById('recordsList');
+  if (!container) return;
+  const inputs = container.querySelectorAll('.record-card-select input[type="checkbox"]');
+  inputs.forEach(input => {
+    input.checked = checked;
+    const id = input.getAttribute('data-record-id');
+    if (!id) return;
+    if (checked) {
+      selectedRecordIds.add(String(id));
+    } else {
+      selectedRecordIds.delete(String(id));
+    }
+    const card = input.closest('.record-card');
+    if (card) card.classList.toggle('selected', checked);
+  });
+  updateRecordSelectionUI();
+}
+
+async function deleteSelectedRecords() {
+  const ids = Array.from(selectedRecordIds);
+  if (ids.length === 0) return;
+  if (!window.confirm(t('delete_selected_confirm'))) return;
+
+  let failCount = 0;
+  for (const id of ids) {
+    try {
+      const res = await fetch(`/api/v1/android/data/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      const result = await res.json();
+      if (!result.success) { failCount += 1; continue; }
+      allRecords = allRecords.filter(r => String(r.id) !== String(id));
+      selectedRecordIds.delete(String(id));
+    } catch (_) {
+      failCount += 1;
+    }
+  }
+
+  renderRecords();
+  renderGallery();
+  renderRecentActivity();
+  loadStats();
+
+  if (failCount > 0) {
+    showToast(`${t('delete_selected_failed')} (${failCount})`, 'error');
+  } else {
+    showToast(t('deleted'), 'success');
+  }
 }
 
 function formatPayload(payload) {
@@ -1007,6 +1100,7 @@ async function confirmDelete() {
     const result = await res.json();
     if (result.success) {
       allRecords = allRecords.filter(r => String(r.id) !== String(id));
+      removeRealtimeItemById(id);
       renderRecords();
       renderGallery();
       loadStats();
@@ -1022,6 +1116,97 @@ async function confirmDelete() {
 function handleSearch(query) {
   searchQuery = query;
   renderRecords();
+}
+
+function getRecordPlateValue(payload) {
+  return String(payload?.licensePlate || payload?.license_plate || '').trim();
+}
+
+function updateRecordPlateInCache(updatedRecord) {
+  allRecords = allRecords.map((record) => String(record.id) === String(updatedRecord.id) ? updatedRecord : record);
+}
+
+function updateRealtimeItem(record) {
+  const item = document.querySelector(`.realtime-item[data-record-id="${CSS.escape(String(record.id))}"]`);
+  if (!item) return;
+
+  const plateEl = item.querySelector('.realtime-item-plate');
+  if (plateEl) {
+    plateEl.textContent = getRecordPlateValue(record.payload) || `#${record.id}`;
+  }
+}
+
+function startEditPlateNumber(id) {
+  const input = document.getElementById('editPlateNumberInput');
+  if (input) { input.focus(); input.select(); }
+}
+
+function cancelEditPlateNumber() {
+  editingPlateRecordId = null;
+  savingPlateRecordId = null;
+  closeRecordDetail();
+}
+
+async function savePlateNumber(id) {
+  const input = document.getElementById('editPlateNumberInput');
+  const plateNumber = input ? input.value.trim() : '';
+
+  if (!plateNumber) {
+    showToast(t('plate_number_required'), 'error');
+    if (input) input.focus();
+    return;
+  }
+
+  const saveBtn = document.getElementById('savePlateBtn');
+  if (saveBtn) saveBtn.disabled = true;
+  savingPlateRecordId = String(id);
+
+  try {
+    const res = await fetch(`/api/v1/android/data/${id}/plate-number`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ plateNumber })
+    });
+    const result = await res.json();
+
+    if (!result.success || !result.data) {
+      showToast(result.message || t('update_plate_failed'), 'error');
+      savingPlateRecordId = null;
+      if (saveBtn) saveBtn.disabled = false;
+      return;
+    }
+
+    updateRecordPlateInCache(result.data);
+    updateRealtimeItem(result.data);
+    editingPlateRecordId = null;
+    savingPlateRecordId = null;
+    renderRecords();
+    renderGallery();
+    renderRecentActivity();
+
+    const card = document.getElementById('plateFieldCard');
+    const safeId = escapeHtml(String(id));
+    const newPlate = getRecordPlateValue(result.data.payload || {});
+    if (card) {
+      card.innerHTML = `
+        <div class="detail-field-header">
+          <span class="detail-label">${escapeHtml(t('plate_number'))}</span>
+          <div class="detail-inline-actions">
+            <button class="btn btn-sm btn-outline" onclick="cancelEditPlateNumber()">${escapeHtml(t('cancel'))}</button>
+            <button class="btn btn-sm btn-primary" id="savePlateBtn" onclick="savePlateNumber('${safeId}')">${escapeHtml(t('save'))}</button>
+          </div>
+        </div>
+        <input id="editPlateNumberInput" class="detail-input" type="text" maxlength="100" value="${escapeHtml(newPlate)}" onkeydown="if (event.key === 'Enter') { event.preventDefault(); savePlateNumber('${safeId}'); }" />`;
+    }
+    showToast(t('plate_number_updated'), 'success');
+  } catch (_error) {
+    savingPlateRecordId = null;
+    if (saveBtn) saveBtn.disabled = false;
+    showToast(t('update_plate_failed'), 'error');
+  }
 }
 
 // ==================== RECENT ACTIVITY ====================
@@ -1073,9 +1258,23 @@ function openRecordDetail(id) {
   const p = record.payload || {};
   const photoUrl = p.photoUrl ? escapeHtml(p.photoUrl) : '';
   const time = record.receivedAt ? new Date(record.receivedAt).toLocaleString(currentLang === 'th' ? 'th-TH' : 'en-US') : '-';
+  const plateValue = getRecordPlateValue(p);
+
+  const plateField = `<div id="plateFieldCard" class="detail-field detail-field-editing detail-field-wide">
+     <div class="detail-field-header">
+       <span class="detail-label">${escapeHtml(t('plate_number'))}</span>
+       <div class="detail-inline-actions">
+         <button class="btn btn-sm btn-outline" onclick="cancelEditPlateNumber()">${escapeHtml(t('cancel'))}</button>
+         <button class="btn btn-sm btn-primary" id="savePlateBtn" onclick="savePlateNumber('${escapeHtml(String(id))}')">${escapeHtml(t('save'))}</button>
+       </div>
+     </div>
+     <input id="editPlateNumberInput" class="detail-input" type="text" maxlength="100" value="${escapeHtml(plateValue)}" onkeydown="if (event.key === 'Enter') { event.preventDefault(); savePlateNumber('${escapeHtml(String(id))}'); }" />
+   </div>`;
 
   const fields = Object.entries(p)
     .filter(([k]) => k !== 'photoUrl' && k !== 'photoOriginalName')
+    .filter(([k], index, entries) => !(k === 'license_plate' && entries.some(([entryKey]) => entryKey === 'licensePlate')))
+    .filter(([k]) => k !== 'licensePlate' && k !== 'license_plate')
     .map(([k, v]) => {
       const label = escapeHtml(t(k) !== k ? t(k) : k);
       const localizedValue = k === 'status' ? getLocalizedStatus(v) : v;
@@ -1087,13 +1286,15 @@ function openRecordDetail(id) {
   const html = `
     <div class="record-detail-content ${photoUrl ? '' : 'no-photo'}">
       ${photoUrl ? `<div class="record-detail-photo" onclick="openLightbox('${photoUrl}')"><img src="${photoUrl}" alt="" /><div class="record-detail-photo-overlay"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div></div>` : ''}
-      <div class="record-detail-fields">${fields}</div>
+      <div class="record-detail-fields">${plateField}${fields}</div>
       <div class="record-detail-footer">
         <div class="record-detail-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${escapeHtml(time)}</div>
-        <button class="btn btn-sm btn-danger" onclick="closeRecordDetail(); deleteRecord('${safeId}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          ${escapeHtml(t('delete_btn'))}
-        </button>
+        <div class="record-detail-footer-actions">
+          <button class="btn btn-sm btn-danger" onclick="closeRecordDetail(); deleteRecord('${safeId}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            ${escapeHtml(t('delete_btn'))}
+          </button>
+        </div>
       </div>
     </div>`;
 
@@ -1107,6 +1308,8 @@ function closeRecordDetail() {
   document.getElementById('recordDetailModal').classList.remove('active');
   document.body.style.overflow = '';
   activeRecordDetailId = null;
+  editingPlateRecordId = null;
+  savingPlateRecordId = null;
 }
 
 // ==================== GALLERY ====================
@@ -1204,6 +1407,137 @@ function connectSSE() {
   };
 }
 
+function updateRealtimeSelectionUI() {
+  const feed = document.getElementById('realtimeFeed');
+  const countEl = document.querySelector('.realtime-count');
+  const deleteBtn = document.getElementById('btnDeleteRealtimeSelected');
+  const selectAll = document.getElementById('realtimeSelectAll');
+  if (!feed) return;
+
+  const items = Array.from(feed.querySelectorAll('.realtime-item[data-record-id]'));
+  const itemCount = items.length;
+  const selectedCount = items.filter((el) => selectedRealtimeIds.has(String(el.dataset.recordId))).length;
+
+  if (countEl) {
+    if (itemCount === 0) {
+      countEl.textContent = t('waiting');
+    } else if (selectedCount > 0) {
+      countEl.textContent = `${itemCount} ${t('records')} · ${selectedCount} ${t('selected')}`;
+    } else {
+      countEl.textContent = `${itemCount} ${t('records')}`;
+    }
+  }
+
+  if (deleteBtn) {
+    deleteBtn.disabled = selectedCount === 0;
+  }
+
+  if (selectAll) {
+    selectAll.checked = itemCount > 0 && selectedCount === itemCount;
+    selectAll.indeterminate = selectedCount > 0 && selectedCount < itemCount;
+  }
+}
+
+function toggleRealtimeSelection(id, checked) {
+  const safeId = String(id);
+  if (checked) {
+    selectedRealtimeIds.add(safeId);
+  } else {
+    selectedRealtimeIds.delete(safeId);
+  }
+
+  const item = document.querySelector(`.realtime-item[data-record-id="${CSS.escape(safeId)}"]`);
+  if (item) {
+    item.classList.toggle('selected', checked);
+  }
+
+  updateRealtimeSelectionUI();
+}
+
+function toggleRealtimeSelectAll(checked) {
+  const feed = document.getElementById('realtimeFeed');
+  if (!feed) return;
+
+  const inputs = feed.querySelectorAll('.realtime-item-select input[type="checkbox"]');
+  inputs.forEach((input) => {
+    input.checked = checked;
+    const id = input.getAttribute('data-record-id');
+    if (!id) return;
+    if (checked) {
+      selectedRealtimeIds.add(String(id));
+    } else {
+      selectedRealtimeIds.delete(String(id));
+    }
+
+    const item = input.closest('.realtime-item');
+    if (item) item.classList.toggle('selected', checked);
+  });
+
+  updateRealtimeSelectionUI();
+}
+
+function removeRealtimeItemById(id) {
+  const safeId = String(id);
+  selectedRealtimeIds.delete(safeId);
+
+  const node = document.querySelector(`.realtime-item[data-record-id="${CSS.escape(safeId)}"]`);
+  if (node) {
+    node.remove();
+  }
+
+  const feed = document.getElementById('realtimeFeed');
+  if (feed && feed.querySelectorAll('.realtime-item').length === 0) {
+    feed.innerHTML = `
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+        <p>${escapeHtml(t('realtime_empty'))}</p>
+      </div>`;
+  }
+
+  updateRealtimeSelectionUI();
+}
+
+async function deleteSelectedRealtimeRecords() {
+  const ids = Array.from(selectedRealtimeIds);
+  if (ids.length === 0) return;
+
+  if (!window.confirm(t('delete_selected_confirm'))) {
+    return;
+  }
+
+  let failCount = 0;
+  for (const id of ids) {
+    try {
+      const res = await fetch(`/api/v1/android/data/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      const result = await res.json();
+      if (!result.success) {
+        failCount += 1;
+        continue;
+      }
+
+      allRecords = allRecords.filter((r) => String(r.id) !== String(id));
+      removeRealtimeItemById(id);
+    } catch (_) {
+      failCount += 1;
+    }
+  }
+
+  renderRecords();
+  renderGallery();
+  loadStats();
+
+  if (failCount > 0) {
+    showToast(`${t('delete_selected_failed')} (${failCount})`, 'error');
+  } else {
+    showToast(t('deleted'), 'success');
+  }
+}
+
 function addRealtimeItem(record) {
   const feed = document.getElementById('realtimeFeed');
   if (!feed) return;
@@ -1225,16 +1559,26 @@ function addRealtimeItem(record) {
   const status = p.status || '';
   const safeStatus = escapeHtml(getLocalizedStatus(status));
   const statusClass = getStatusClass(status);
+  const selected = selectedRealtimeIds.has(String(record.id));
 
   const item = document.createElement('div');
-  item.className = 'realtime-item';
+  item.className = `realtime-item${selected ? ' selected' : ''}`;
+  item.dataset.recordId = String(record.id);
   item.style.cursor = 'pointer';
   item.setAttribute('onclick', `openRecordDetail('${safeId}')`);
   item.innerHTML = `
     <div class="realtime-item-header">
+      <label class="realtime-item-select" onclick="event.stopPropagation()">
+        <input type="checkbox" data-record-id="${safeId}" ${selected ? 'checked' : ''} onchange="toggleRealtimeSelection(this.dataset.recordId, this.checked)" />
+      </label>
       <div class="realtime-item-dot"></div>
       <span class="realtime-item-time">${safeTime}</span>
       ${safeStatus ? `<span class="activity-badge ${statusClass}">${safeStatus}</span>` : ''}
+      <div class="realtime-item-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm btn-danger" data-record-id="${safeId}" onclick="deleteRecord(this.dataset.recordId)">
+          ${escapeHtml(t('delete_btn'))}
+        </button>
+      </div>
     </div>
     <div class="realtime-item-body">
       ${safePhotoUrl ? `<div class="realtime-item-thumb"><img src="${safePhotoUrl}" alt="" loading="lazy" /></div>` : ''}
@@ -1249,15 +1593,13 @@ function addRealtimeItem(record) {
 
   // Keep max 50 items
   while (feed.children.length > 50) {
-    feed.removeChild(feed.lastChild);
+    const removed = feed.lastChild;
+    const removedId = removed?.dataset?.recordId;
+    if (removedId) selectedRealtimeIds.delete(String(removedId));
+    feed.removeChild(removed);
   }
 
-  // Update count
-  const countEl = document.querySelector('.realtime-count');
-  if (countEl) {
-    const count = feed.querySelectorAll('.realtime-item').length;
-    countEl.textContent = count + ' ' + t('records');
-  }
+  updateRealtimeSelectionUI();
 }
 
 // ==================== USER MANAGEMENT ====================

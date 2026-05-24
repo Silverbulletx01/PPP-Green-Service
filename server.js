@@ -24,6 +24,13 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const DEVICE_API_KEY = (process.env.DEVICE_API_KEY || '').trim();
 const DEVICE_AUTH_REQUIRED = String(process.env.DEVICE_AUTH_REQUIRED || 'true').toLowerCase() !== 'false';
 const AUTH_COOKIE_NAME = 'ppp_auth';
+const PPP_WIFI_ALLOWED_CIDRS = (process.env.PPP_WIFI_ALLOWED_CIDRS || process.env.WIFI_ALLOWED_CIDRS || '')
+  .split(',')
+  .map((segment) => segment.trim())
+  .filter(Boolean);
+const PPP_WIFI_ENFORCE = String(process.env.PPP_WIFI_ENFORCE || '')
+  .toLowerCase() === 'true' || PPP_WIFI_ALLOWED_CIDRS.length > 0;
+const PPP_WIFI_ALLOW_LOCALHOST = String(process.env.PPP_WIFI_ALLOW_LOCALHOST || 'true').toLowerCase() !== 'false';
 
 const DB_HOST = process.env.DB_HOST || process.env.MYSQLHOST || '127.0.0.1';
 const DB_PORT = Number(process.env.DB_PORT || process.env.MYSQLPORT || 3306);
@@ -38,13 +45,14 @@ if (process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL) {
 
 let dbPool = null;
 const sseClients = new Set();
+let totalDataReceived = 0;
 
 function validateRequiredSecurityConfig() {
   if (!JWT_SECRET || JWT_SECRET === 'ppp-palm-default-secret' || JWT_SECRET.length < 32) {
     throw new Error('JWT_SECRET is missing or weak. Set a strong random secret (min 32 chars) in .env.');
   }
 
-  if (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD === 'admin123') {
+  if (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD === 'P@ssw0rdppp') {
     throw new Error('ADMIN_PASSWORD is missing or insecure. Set a strong admin password in .env.');
   }
 
@@ -127,6 +135,76 @@ function parsePayload(rawPayload) {
   }
 }
 
+function normalizeClientIp(rawIp) {
+  if (!rawIp || typeof rawIp !== 'string') return '';
+  const firstIp = rawIp.split(',')[0].trim();
+  if (!firstIp) return '';
+
+  let normalized = firstIp;
+  if (normalized.startsWith('::ffff:')) {
+    normalized = normalized.slice(7);
+  }
+
+  if (normalized.startsWith('[') && normalized.includes(']')) {
+    normalized = normalized.slice(1, normalized.indexOf(']'));
+  }
+
+  if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(normalized)) {
+    normalized = normalized.split(':')[0];
+  }
+
+  return normalized;
+}
+
+function isIpv4(ip) {
+  if (!/^\d+\.\d+\.\d+\.\d+$/.test(ip)) return false;
+  return ip.split('.').every((segment) => {
+    const n = Number(segment);
+    return Number.isInteger(n) && n >= 0 && n <= 255;
+  });
+}
+
+function ipv4ToInt(ip) {
+  return ip.split('.').reduce((acc, octet) => ((acc << 8) + Number(octet)) >>> 0, 0);
+}
+
+function parseIpv4Cidr(cidrValue) {
+  const value = String(cidrValue || '').trim();
+  if (!value) return null;
+
+  const [rawIp, rawPrefix] = value.split('/');
+  const ip = normalizeClientIp(rawIp);
+  if (!isIpv4(ip)) return null;
+
+  const prefix = rawPrefix === undefined ? 32 : Number(rawPrefix);
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;
+
+  const ipInt = ipv4ToInt(ip);
+  const mask = prefix === 0 ? 0 : ((0xffffffff << (32 - prefix)) >>> 0);
+  const network = ipInt & mask;
+
+  return {
+    source: value,
+    network,
+    mask,
+    prefix
+  };
+}
+
+function ipInIpv4Cidr(ip, cidr) {
+  if (!cidr || !isIpv4(ip)) return false;
+  const ipInt = ipv4ToInt(ip);
+  return (ipInt & cidr.mask) === cidr.network;
+}
+
+const parsedPppWifiCidrs = PPP_WIFI_ALLOWED_CIDRS
+  .map(parseIpv4Cidr)
+  .filter(Boolean);
+
+function isLocalhostIp(ip) {
+  return ip === '127.0.0.1' || ip === '::1';
+}
+
 function mapUserRow(row) {
   if (!row) return null;
   return {
@@ -155,6 +233,10 @@ function mapRecordRow(row) {
     plateImageName: row.plate_image_name || null,
     plateImageMime: row.plate_image_mime || null
   };
+}
+
+function normalizePlateNumberInput(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 100);
 }
 
 // Helper: get all users
@@ -290,6 +372,50 @@ async function getDataRecords() {
     ORDER BY received_at DESC`
   );
   return rows.map(mapRecordRow);
+}
+
+async function updateDataRecordPlateNumber(id, plateNumber) {
+  const [rows] = await dbPool.query(
+    `SELECT
+      id,
+      received_at,
+      payload,
+      plate_image_name,
+      plate_image_mime,
+      (plate_image IS NOT NULL) AS has_plate_image
+    FROM android_data
+    WHERE id = ?
+    LIMIT 1`,
+    [id]
+  );
+
+  if (!rows.length) {
+    return null;
+  }
+
+  const normalizedPlateNumber = normalizePlateNumberInput(plateNumber);
+  if (!normalizedPlateNumber) {
+    throw new Error('Plate number is required.');
+  }
+
+  const row = rows[0];
+  const payload = parsePayload(row.payload);
+  const hasCamelKey = Object.prototype.hasOwnProperty.call(payload, 'licensePlate');
+  const hasSnakeKey = Object.prototype.hasOwnProperty.call(payload, 'license_plate');
+
+  if (hasCamelKey) payload.licensePlate = normalizedPlateNumber;
+  if (hasSnakeKey) payload.license_plate = normalizedPlateNumber;
+  if (!hasCamelKey && !hasSnakeKey) payload.licensePlate = normalizedPlateNumber;
+
+  await dbPool.query(
+    'UPDATE android_data SET payload = ? WHERE id = ?',
+    [JSON.stringify(payload), id]
+  );
+
+  return mapRecordRow({
+    ...row,
+    payload: JSON.stringify(payload)
+  });
 }
 
 // Helper: fetch image blob for a record
@@ -955,7 +1081,7 @@ app.delete('/api/v1/users/:id', authenticateToken, requireAdmin, async (req, res
 
 // ==================== SSE STREAM ====================
 
-app.get('/api/v1/android/data/stream', optionalAuth, (req, res) => {
+app.get('/v1/android/data/stream', optionalAuth, (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -980,7 +1106,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'ppp-palm-service',
-    version: '2.0.0',
+    version: '1.0.0',
     storage: 'mysql',
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
@@ -999,10 +1125,48 @@ function authenticateDevice(req, res, next) {
   next();
 }
 
+function enforcePppWifiNetwork(req, res, next) {
+  if (!PPP_WIFI_ENFORCE) {
+    return next();
+  }
+
+  if (parsedPppWifiCidrs.length === 0) {
+    console.warn('PPP WiFi restriction is enabled but PPP_WIFI_ALLOWED_CIDRS is not configured correctly.');
+    return res.status(503).json({
+      success: false,
+      message: 'PPP WiFi network restriction is enabled but no valid allowed network is configured.'
+    });
+  }
+
+  const rawIp = req.headers['x-forwarded-for'] || req.ip || req.socket?.remoteAddress || '';
+  const clientIp = normalizeClientIp(String(rawIp));
+
+  if (PPP_WIFI_ALLOW_LOCALHOST && isLocalhostIp(clientIp)) {
+    return next();
+  }
+
+  if (!isIpv4(clientIp)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Request blocked. Only IPv4 clients from PPP WiFi are allowed.'
+    });
+  }
+
+  const allowed = parsedPppWifiCidrs.some((cidr) => ipInIpv4Cidr(clientIp, cidr));
+  if (!allowed) {
+    return res.status(403).json({
+      success: false,
+      message: 'Request blocked. This endpoint accepts data only from PPP WiFi network.'
+    });
+  }
+
+  next();
+}
+
 // ==================== DATA ROUTES ====================
 
 // POST - receive data from Android app (no auth required for device submission)
-app.post('/api/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, res, next) => {
+app.post('/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, res, next) => {
   const contentType = req.headers['content-type'] || '';
   if (!contentType.includes('multipart/form-data')) {
     next();
@@ -1089,6 +1253,7 @@ app.post('/api/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, re
   };
   try {
     const savedRecord = await createDataRecord(recordPayload);
+    totalDataReceived++;
     broadcastNewRecord(savedRecord);
     return res.status(201).json({ success: true, message: 'Data received successfully.', data: savedRecord });
   } catch (error) {
@@ -1098,7 +1263,7 @@ app.post('/api/v1/android/data', dataSubmitLimiter, authenticateDevice, (req, re
 });
 
 // GET - fetch all data (protected)
-app.get('/api/v1/android/data', authenticateToken, async (req, res) => {
+app.get('/v1/android/data', authenticateToken, async (req, res) => {
   try {
     const data = await getDataRecords();
     return res.status(200).json({ success: true, count: data.length, data });
@@ -1109,7 +1274,7 @@ app.get('/api/v1/android/data', authenticateToken, async (req, res) => {
 });
 
 // GET - fetch stored plate image by record id (protected)
-app.get('/api/v1/android/data/:id/plate-image', authenticateToken, async (req, res) => {
+app.get('/v1/android/data/:id/plate-image', authenticateToken, async (req, res) => {
   try {
     const imageData = await getDataRecordImageById(req.params.id);
     if (!imageData) {
@@ -1128,8 +1293,32 @@ app.get('/api/v1/android/data/:id/plate-image', authenticateToken, async (req, r
   }
 });
 
+// PUT - update record plate number (protected)
+app.put('/v1/android/data/:id/plate-number', authenticateToken, async (req, res) => {
+  const plateNumber = req.body?.plateNumber ?? req.body?.licensePlate ?? req.body?.license_plate ?? '';
+
+  try {
+    const updatedRecord = await updateDataRecordPlateNumber(req.params.id, plateNumber);
+    if (!updatedRecord) {
+      return res.status(404).json({ success: false, message: 'Record not found.' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Plate number updated successfully.',
+      data: updatedRecord
+    });
+  } catch (error) {
+    if (error.message === 'Plate number is required.') {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    console.error('Update plate number error:', error.message);
+    return res.status(500).json({ success: false, message: 'Failed to update plate number.' });
+  }
+});
+
 // DELETE - delete a record (protected)
-app.delete('/api/v1/android/data/:id', authenticateToken, async (req, res) => {
+app.delete('/v1/android/data/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const deleted = await deleteDataRecord(id);
@@ -1189,6 +1378,7 @@ app.get('/api/v1/stats', authenticateToken, async (req, res) => {
       withPhotos,
       todayRecords,
       activeConnections: sseClients.size,
+      totalDataReceived,
       dailyStats,
       hourlyStats,
       storageType: 'MySQL (XAMPP)'
@@ -1226,9 +1416,22 @@ function startServer(initialPort) {
   }
 
   const listen = () => {
-    const server = serverFactory(app).listen(currentPort, () => {
-      console.log(`\n  PPP Palm Service v2.0.0`);
+    const server = serverFactory(app).listen(currentPort, '0.0.0.0', () => {
+      const os = require('os');
+      const interfaces = os.networkInterfaces();
+      let localIp = '127.0.0.1';
+      for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+          if (iface.family === 'IPv4' && !iface.internal) {
+            localIp = iface.address;
+            break;
+          }
+        }
+        if (localIp !== '127.0.0.1') break;
+      }
+      console.log(`\n  PPP Palm Service v1.0.0`);
       console.log(`  Server running on ${protocol}://localhost:${currentPort}`);
+      console.log(`  Network access: ${protocol}://${localIp}:${currentPort}`);
       console.log('  Storage: MySQL (XAMPP)\n');
     });
     server.on('error', (error) => {

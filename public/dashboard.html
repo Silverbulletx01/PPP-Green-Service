@@ -207,6 +207,18 @@
             <span class="stat-label" data-i18n="stat_connections">Active Connections</span>
           </div>
         </div>
+        <div class="stat-card" style="cursor:pointer" onclick="switchPage('realtime', document.querySelector('[data-page=realtime]'))">
+          <div class="stat-icon icon-purple">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value counter" id="statReceived">0</span>
+            <span class="stat-label" data-i18n="stat_received">Data Received</span>
+            <span class="stat-sub" data-i18n="stat_received_sub">Since server start</span>
+          </div>
+        </div>
       </div>
 
       <div class="charts-grid">
@@ -268,6 +280,16 @@
           <h2 data-i18n="nav_records">Records</h2>
           <span class="page-subtitle"></span>
         </div>
+        <div class="records-bulk-actions">
+          <label class="realtime-select-all">
+            <input type="checkbox" id="recordsSelectAll" onchange="toggleRecordSelectAll(this.checked)" />
+            <span data-i18n="select_all">Select all</span>
+          </label>
+          <button id="btnDeleteRecordsSelected" class="btn btn-sm btn-danger" disabled onclick="deleteSelectedRecords()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span data-i18n="delete_selected">Delete selected</span>
+          </button>
+        </div>
       </div>
       <div class="records-toolbar">
         <div class="records-count">
@@ -318,7 +340,17 @@
           <span class="live-dot pulse"></span>
           <span data-i18n="live_feed">Live Feed</span>
         </div>
-        <span class="realtime-count" data-i18n="waiting">Waiting for new data...</span>
+        <div class="realtime-actions">
+          <label class="realtime-select-all">
+            <input type="checkbox" id="realtimeSelectAll" onchange="toggleRealtimeSelectAll(this.checked)" />
+            <span data-i18n="select_all">Select all</span>
+          </label>
+          <button type="button" class="btn btn-sm btn-danger" id="btnDeleteRealtimeSelected" onclick="deleteSelectedRealtimeRecords()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span data-i18n="delete_selected">Delete selected</span>
+          </button>
+          <span class="realtime-count" data-i18n="waiting">Waiting for new data...</span>
+        </div>
       </div>
       <div class="realtime-feed" id="realtimeFeed">
         <div class="empty-state">
